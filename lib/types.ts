@@ -1,22 +1,45 @@
+export type PlatformName = "zoom" | "teams" | "google meet" | "unknown"
+export type StatusType = "success" | "error" | "pending" | "warning"
+export type UserReportedErrorStatus = "open" | "closed" | "in_progress"
+
+// Error categories from Rust implementation
+export type ErrorCategory = 
+  | "system_error"
+  | "auth_error" 
+  | "capacity_error"
+  | "connection_error"
+  | "permission_error"
+  | "input_error"
+  | "duplicate_error"
+  | "webhook_error"
+  | "api_error"
+  | "unknown_error"
+  | "stalled_error"
+  | "success"
+  | "pending"
+
+// Error priorities from Rust implementation
+export type ErrorPriority = "critical" | "high" | "medium" | "low" | "none"
+
 export type UserReportedErrorMessage = {
   created_at: string
   author: string
   note: string
+  chat_id?: string
 }
 
 export type UserReportedError = {
-  status: "open" | "closed" | "in progress"
+  status: UserReportedErrorStatus
   messages: UserReportedErrorMessage[]
 }
 
-export type BotStatusResponse = {
-  category: string
-  color: string
-  details: string | null
-  icon: string
-  sort_priority: number
-  type: string
+export type Status = {
   value: string
+  type: StatusType
+  details?: string | null
+  sort_priority: number
+  category: ErrorCategory
+  message?: string
 }
 
 export type BotData = {
@@ -56,10 +79,83 @@ export type BotData = {
     zoom_sdk_pwd: string | null
   }
   duration: number
-  status: BotStatusResponse
+  status: Status
 }
 
 export type BotPaginated = {
   has_more: boolean
   bots: BotData[]
+}
+
+export type FormattedBotData = BotData & {
+  platform: PlatformName
+}
+
+export type FilterState = {
+  platformFilters: string[]
+  statusFilters: string[]
+  userReportedErrorStatusFilters: string[]
+  errorCategoryFilters?: string[]
+  errorPriorityFilters?: string[]
+}
+
+export type PlatformDistribution = {
+  platform: string
+  count: number
+  percentage: number
+}
+
+export type DailyStats = {
+  date: string
+  totalBots: number
+  errorBots: number
+  platforms: {
+    [key: string]: number
+  }
+}
+
+export type ErrorType = {
+  type: string
+  count: number
+  percentage: number
+  category?: ErrorCategory
+  priority?: ErrorPriority
+}
+
+export type ErrorCategoryDistribution = {
+  category: ErrorCategory
+  count: number
+  percentage: number
+  types: ErrorType[]
+}
+
+export type UserReportedErrorDistribution = {
+  status: UserReportedErrorStatus
+  count: number
+  percentage: number
+}
+
+// Add token consumption types
+export type TokenConsumptionByService = {
+  duration: number
+  transcription_hour: number
+  transcription_byok_hour: number
+  streaming_output_hour: number
+  streaming_input_hour: number
+  recording_tokens: number
+  transcription_tokens: number
+  transcription_byok_tokens: number
+  streaming_output_tokens: number
+  streaming_input_tokens: number
+}
+
+export type DailyTokenConsumption = {
+  date: string
+  consumption_by_service: TokenConsumptionByService
+}
+
+export type UserTokensResponse = {
+  available_tokens: number
+  total_tokens_purchased: number
+  last_purchase_date: string | null
 }

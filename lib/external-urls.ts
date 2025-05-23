@@ -15,11 +15,12 @@ export const TERMS_AND_CONDITIONS_URL = "https://meetingbaas.com/terms-and-condi
 export const PRIVACY_POLICY_URL = "https://meetingbaas.com/privacy"
 
 // Utility
-export const SETTINGS_URL = `https://${environment}meetingbaas.com`
-export const LOGS_URL = `${SETTINGS_URL}/logs`
+export const WEB_APP_URL = `https://${environment}meetingbaas.com`
+export const SETTINGS_URL = `https://settings.${environment}meetingbaas.com`
+export const LOGS_URL = `https://logs.${environment}meetingbaas.com`
 export const CREDENTIALS_URL = `${SETTINGS_URL}/credentials`
-export const CONSUMPTION_URL = `${SETTINGS_URL}/usage`
-export const BILLING_URL = `${SETTINGS_URL}/billing`
+export const CONSUMPTION_URL = `${WEB_APP_URL}/usage`
+export const BILLING_URL = `${WEB_APP_URL}/billing`
 
 // Github
 export const GITHUB_REPO_URL = "https://github.com/Meeting-Baas/analytics"

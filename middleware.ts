@@ -1,12 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { getAuthAppUrl } from "@/lib/auth/auth-app-url"
 
 if (!process.env.AUTH_COOKIE_NAME) {
   throw new Error("AUTH_COOKIE_NAME environment variable is not defined")
 }
 
-if (!process.env.NEXT_PUBLIC_AUTH_APP_URL) {
-  throw new Error("NEXT_PUBLIC_AUTH_APP_URL environment variable is not defined")
-}
+const authAppUrl = getAuthAppUrl()
 
 export async function middleware(request: NextRequest) {
   // Check if auth cookie exists before processing request
@@ -15,7 +14,7 @@ export async function middleware(request: NextRequest) {
   const cookie = authCookieName ? request.cookies.get(authCookieName) : undefined
   const response = NextResponse.next()
 
-  const signInUrl = `${process.env.NEXT_PUBLIC_AUTH_APP_URL}/sign-in`
+  const signInUrl = `${authAppUrl}/sign-in`
   const appUrl = request.nextUrl.origin
   const redirectTo = `${appUrl}${request.nextUrl.pathname}${request.nextUrl.search}`
 

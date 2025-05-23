@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@config "../tailwind.config.ts";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -25,11 +26,18 @@
   --color-baas-neutral-400: var(--baas-neutral-400);
   --color-baas-neutral-500: var(--baas-neutral-500);
   --color-baas-warning-500: var(--baas-warning-500);
+  --color-baas-primary-700: var(--baas-primary-700);
   --color-baas-black: var(--baas-black);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+    /* Overriding the primary color used in the datepicker component */
+    --color-blue-400: var(--primary);
+    --color-blue-500: var(--primary);
+    --color-blue-600: var(--primary);
+    --color-blue-700: var(--primary);
 }
 
 :root {
@@ -60,15 +68,52 @@
   --baas-primary-700: oklch(0.53 0.0548 187.47);
   --baas-black: oklch(0.26 0 0);
 
-  /* Chart colors */
-  --chart-1: 192 80% 60%; /* Blue for Google Meet */
-  --chart-2: 327 73% 52%; /* Purple for Zoom */
-  --chart-3: 162 63% 41%; /* Teal for Teams */
-  --chart-4: 43 96% 58%; /* Yellow */
-  --chart-5: 0 91% 63%; /* Red */
+  /* Chart colors - Marine/Teal palette */
+  --chart-1: #78FFF0; /* Primary teal */
+  --chart-2: #6AEDDF; /* Teal variation 1 */
+  --chart-3: #5CDBCF; /* Teal variation 2 */
+  --chart-4: #4EC9BF; /* Teal variation 3 */
+  --chart-5: #40B7AF; /* Teal variation 4 */
+  --chart-6: #32A59F; /* Teal variation 5 */
+  --chart-7: #24938F; /* Teal variation 6 */
+  --chart-8: #16817F; /* Teal variation 7 */
+  --chart-9: #086F6F; /* Teal variation 8 */
+  --chart-10: #447671; /* Primary dark teal */
 
   /* Success and error colors */
-  --success: 142 76% 36%;
+  --success: #78FFF0; /* Primary teal */
+  --warning: #FFFF93; /* Warning yellow */
+  --error: #FE1B4E; /* Error red */
+  
+  /* Marine/Teal Palette variables for use in JS */
+  --color-chart-1: #78FFF0;
+  --color-chart-2: #6AEDDF;
+  --color-chart-3: #5CDBCF;
+  --color-chart-4: #4EC9BF;
+  --color-chart-5: #40B7AF;
+  --color-chart-6: #32A59F;
+  --color-chart-7: #24938F;
+  --color-chart-8: #16817F;
+  --color-chart-9: #086F6F;
+  --color-chart-10: #447671;
+  
+  /* Status colors */
+  --color-success: #78FFF0;
+  --color-warning: #FFFF93;
+  --color-error: #FE1B4E;
+  --color-error-mid: #FE809C;
+  
+  /* Apply to chart colors */
+  --chart-color-1: var(--color-chart-1);
+  --chart-color-2: var(--color-chart-2);
+  --chart-color-3: var(--color-chart-3);
+  --chart-color-4: var(--color-chart-4);
+  --chart-color-5: var(--color-chart-5);
+  --chart-color-6: var(--color-chart-6);
+  --chart-color-7: var(--color-chart-7);
+  --chart-color-8: var(--color-chart-8);
+  --chart-color-9: var(--color-chart-9);
+  --chart-color-10: var(--color-chart-10);
 }
 
 .dark {
@@ -87,15 +132,22 @@
   --input: var(--baas-neutral-500);
   --ring: oklch(0.67 0.143484 235.7191);
 
-  /* Chart colors for dark mode */
-  --chart-1: 195 85% 50%; /* Blue for Google Meet */
-  --chart-2: 327 100% 70%; /* Purple for Zoom */
-  --chart-3: 162 70% 45%; /* Teal for Teams */
-  --chart-4: 43 100% 65%; /* Yellow */
-  --chart-5: 0 95% 65%; /* Red */
+  /* Chart colors - Marine/Teal palette for dark mode */
+  --chart-1: #78FFF0; /* Primary teal */
+  --chart-2: #6AEDDF; /* Teal variation 1 */
+  --chart-3: #5CDBCF; /* Teal variation 2 */
+  --chart-4: #4EC9BF; /* Teal variation 3 */
+  --chart-5: #40B7AF; /* Teal variation 4 */
+  --chart-6: #32A59F; /* Teal variation 5 */
+  --chart-7: #24938F; /* Teal variation 6 */
+  --chart-8: #16817F; /* Teal variation 7 */
+  --chart-9: #086F6F; /* Teal variation 8 */
+  --chart-10: #447671; /* Primary dark teal */
 
   /* Success and error colors */
-  --success: 142 76% 45%;
+  --success: #78FFF0; /* Primary teal */
+  --warning: #FFFF93; /* Warning yellow */
+  --error: #FE1B4E; /* Error red */
 }
 
 @layer base {
@@ -130,5 +182,55 @@
         clip-path: inset(0 0 0 0);
       }
     }
+  }
+}
+
+@layer utilities {
+  /* Override specific tailwind utility classes.
+  They are used at various places in the datepicker component. */
+  .border-gray-300 {
+    @apply !border-border;
+  }
+  .border-slate-600 {
+    @apply !border-border;
+  }
+  .bg-white {
+    @apply !bg-background;
+  }
+  .bg-blue-100 {
+    @apply !bg-baas-primary-700/10;
+  }
+  .hover\:bg-blue-100:hover {
+    @apply !bg-accent;
+  }
+  .dark\:border-gray-700:is(.dark *) {
+    @apply !border-border;
+  }
+  .dark\:bg-slate-800:is(.dark *) {
+    @apply !bg-baas-black;
+  }
+  .dark\:text-white:is(.dark *) {
+    @apply !text-foreground;
+  }
+  .dark\:border-slate-600:is(.dark *) {
+    @apply !border-border;
+  }
+  .dark\:bg-white\/10:is(.dark *) {
+    @apply !bg-accent;
+  }
+  .dark\:hover\:bg-white\/10:is(.dark *):hover {
+    @apply !bg-accent;
+  }
+  .dark\:focus\:bg-white\/10:is(.dark *):focus {
+    @apply !bg-accent;
+  }
+  .dark\:bg-white\/5:is(.dark *) {
+    @apply !bg-accent;
+  }
+  .text-gray-400 {
+    @apply !text-muted-foreground/40;
+  }
+  .text-gray-500 {
+    @apply !text-muted-foreground;
   }
 }
