@@ -10,9 +10,9 @@ export function Analytics() {
 
   return (
     <div className="px-6 mx-auto">
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="mt-4">
-        <TabsList className="grid grid-cols-2 w-full">
-          <TabsTrigger value="compact">Compact View</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="w-full">
+          <TabsTrigger value="compact">Bot Dashboard</TabsTrigger>
           <TabsTrigger value="usage">Usage & Tokens</TabsTrigger>
         </TabsList>
         <TabsContent value="compact" className="mt-4">

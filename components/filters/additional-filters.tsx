@@ -60,51 +60,43 @@ interface AdditionalFiltersProps {
 
 export function AdditionalFilters({ filters, setFilters }: AdditionalFiltersProps) {
   const [open, setOpen] = useState(false)
+
   const form = useForm<FiltersFormData>({
     resolver: zodResolver(filtersSchema),
     defaultValues: {
-      platformFilters: filters.platformFilters,
-      statusFilters: filters.statusFilters,
-      userReportedErrorStatusFilters: filters.userReportedErrorStatusFilters,
+      platformFilters: filters.platformFilters || [],
+      statusFilters: filters.statusFilters || [],
+      userReportedErrorStatusFilters: filters.userReportedErrorStatusFilters || [],
       errorCategoryFilters: filters.errorCategoryFilters || [],
       errorPriorityFilters: filters.errorPriorityFilters || []
     }
   })
 
   const onSubmit = (data: FiltersFormData) => {
-    setOpen(false)
     setFilters({
-      platformFilters: data.platformFilters ?? [],
-      statusFilters: data.statusFilters ?? [],
-      userReportedErrorStatusFilters: data.userReportedErrorStatusFilters ?? [],
-      errorCategoryFilters: data.errorCategoryFilters ?? [],
-      errorPriorityFilters: data.errorPriorityFilters ?? []
+      platformFilters: data.platformFilters || [],
+      statusFilters: data.statusFilters || [],
+      userReportedErrorStatusFilters: data.userReportedErrorStatusFilters || [],
+      errorCategoryFilters: data.errorCategoryFilters || [],
+      errorPriorityFilters: data.errorPriorityFilters || []
     })
+    setOpen(false)
   }
 
-  const handleClearAll = () => {
-    setOpen(false)
-    form.reset({
+  const clearAllFilters = () => {
+    const emptyFilters = {
       platformFilters: [],
       statusFilters: [],
       userReportedErrorStatusFilters: [],
       errorCategoryFilters: [],
       errorPriorityFilters: []
-    })
-    setFilters({
-      platformFilters: [],
-      statusFilters: [],
-      userReportedErrorStatusFilters: [],
-      errorCategoryFilters: [],
-      errorPriorityFilters: []
-    })
-  }
-
-  const isFiltered = Object.keys(filters).some(
-    (key) => {
-      const filterArray = filters[key as keyof FilterState];
-      return filterArray && filterArray.length > 0;
     }
+    form.reset(emptyFilters)
+    setFilters(emptyFilters)
+  }
+
+  const isFiltered = Object.values(filters).some(
+    (filter) => filter && filter.length > 0
   )
 
   return (
@@ -142,13 +134,13 @@ export function AdditionalFilters({ filters, setFilters }: AdditionalFiltersProp
                 )}
               />
             ))}
-            <div className="flex justify-between gap-4">
+            <div className="flex gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={handleClearAll}
                 className="grow"
+                onClick={clearAllFilters}
               >
                 Clear All
               </Button>

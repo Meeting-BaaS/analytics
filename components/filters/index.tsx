@@ -26,11 +26,9 @@ export default function Filters({
 }: FiltersProps) {
   return (
     <div className="my-4 flex flex-col justify-between gap-4 md:flex-row">
-      <div className="flex w-full items-center gap-2 md:w-1/2">
+      <div className="flex w-full items-center gap-2 md:w-2/3 lg:w-3/4 xl:w-4/5">
         <DateRangeFilter value={dateRange} onChange={setDateRange} />
-        {isRefetching && (
-          <Loader2 className="size-4 animate-spin text-primary" aria-label="Refreshing logs" />
-        )}
+        {isRefetching && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
       </div>
       <div className="flex w-full items-center gap-2 md:w-1/3 lg:w-1/4 xl:w-1/5">
         <LimitSelector value={limit} onChange={setLimit} />

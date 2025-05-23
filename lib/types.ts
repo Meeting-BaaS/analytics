@@ -39,6 +39,7 @@ export type Status = {
   details?: string | null
   sort_priority: number
   category: ErrorCategory
+  message?: string
 }
 
 export type BotData = {
