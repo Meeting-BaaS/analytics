@@ -1,9 +1,15 @@
 "use client"
 
+import { AnimatedNumber } from "@/components/ui/animated-number"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer } from "@/components/ui/chart"
-import { formatNumber, formatPercentage } from "@/lib/utils"
-import { useMemo, useState, useEffect } from "react"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { cn, formatNumber, formatPercentage } from "@/lib/utils"
+import { scaleOrdinal } from "d3-scale"
+import { schemeTableau10 } from "d3-scale-chromatic"
+import { AnimatePresence, motion } from "motion/react"
+import { useEffect, useMemo, useState } from "react"
 import {
   Cell,
   Pie,
@@ -12,17 +18,11 @@ import {
   Tooltip,
   type TooltipProps as RechartsTooltipProps
 } from "recharts"
-import { scaleOrdinal } from "d3-scale"
-import { schemeTableau10 } from "d3-scale-chromatic"
-import { Button } from "@/components/ui/button"
-import { motion, AnimatePresence } from "motion/react"
-import { cn } from "@/lib/utils"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { AnimatedNumber } from "@/components/ui/animated-number"
 
 interface ErrorDistributionCardProps {
   errorDistributionData: Array<{ name: string; value: number; percentage: number }>
   totalErrors: number
+  onFilterChange?: (selectedErrorTypes: string[], filteredErrorCount: number) => void
 }
 
 function ErrorDistributionTooltip(props: RechartsTooltipProps<number, string>) {
@@ -50,7 +50,8 @@ function ErrorDistributionTooltip(props: RechartsTooltipProps<number, string>) {
 
 export function ErrorDistributionCard({
   errorDistributionData,
-  totalErrors
+  totalErrors,
+  onFilterChange
 }: ErrorDistributionCardProps) {
   // Initialize with all error types selected
   const [selectedErrorValues, setSelectedErrorValues] = useState<string[]>(() =>
@@ -86,6 +87,13 @@ export function ErrorDistributionCard({
     setFilteredData(filtered)
     setFilteredTotal(filtered.reduce((sum, item) => sum + item.value, 0))
   }, [errorDistributionData, selectedErrorValues])
+
+  // Notify parent component when filtered data changes
+  useEffect(() => {
+    if (onFilterChange) {
+      onFilterChange(selectedErrorValues, filteredTotal)
+    }
+  }, [selectedErrorValues, filteredTotal, onFilterChange])
 
   // Create a color scale based on the number of error types
   const colorScale = useMemo(() => {
