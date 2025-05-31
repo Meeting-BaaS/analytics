@@ -67,6 +67,11 @@ export function ErrorDistributionCard({
   errorDistributionData,
   totalErrors
 }: ErrorDistributionCardProps) {
+  const context = useSelectedErrorContext()
+  if (!context) {
+    throw new Error("ErrorDistributionCard must be used within a SelectedErrorProvider")
+  }
+
   const {
     selectedErrorValues,
     addErrorValue,
@@ -75,21 +80,79 @@ export function ErrorDistributionCard({
     selectNone,
     selectDefault,
     filteredBots,
-    selectedSubtypes,
-    addSubtype,
-    removeSubtype,
-    clearSubtypesForError,
-    canExpand
-  } = useSelectedErrorContext()
+    allBots
+  } = context
+
   const { setHoveredBots, selectBotsByCategory } = useSelectedBots()
   const [filteredData, setFilteredData] = useState(errorDistributionData)
   const [filteredTotal, setFilteredTotal] = useState(totalErrors)
   const [expandedErrors, setExpandedErrors] = useState<Set<string>>(new Set())
+  const [selectedSubtypes, setSelectedSubtypes] = useState<Set<string>>(new Set())
 
-  // Memoize bots by error type for better performance
+  // Get all error bots for the selected main error types (from global context)
+  const allErrorBots = useMemo(() => {
+    return allBots.filter((bot: FormattedBotData) => {
+      if (!["error", "warning"].includes(bot.status.type)) return false
+      return selectedErrorValues.includes(bot.status.value)
+    })
+  }, [allBots, selectedErrorValues])
+
+  // Check if an error type can be expanded (has subtypes)
+  const canExpand = useCallback((errorType: string): boolean => {
+    const errorBots = allErrorBots.filter((bot: FormattedBotData) => bot.status.value === errorType)
+    const errorDistribution = groupBy(errorBots, "status.value")
+    const errorTableData = getErrorTable(errorDistribution)
+    const subtypes = errorTableData.filter(entry => entry.originalType === errorType)
+    return subtypes.length > 1
+  }, [allErrorBots])
+
+  // Get locally filtered bots based on selected subtypes
+  const locallyFilteredBots = useMemo(() => {
+    if (selectedSubtypes.size === 0) {
+      return filteredBots
+    }
+
+    // Get detailed error table data for subtype filtering
+    const errorDistribution = groupBy(allErrorBots, "status.value")
+    const errorTableData = getErrorTable(errorDistribution)
+
+    // Get all UUIDs for selected subtypes
+    const selectedSubtypeUuids = new Set<string>()
+
+    errorTableData.forEach((entry) => {
+      const subtypeName = entry.type === entry.originalType ? entry.message : entry.type
+      const subtypeKey = `${entry.originalType}::${subtypeName}`
+
+      if (selectedSubtypes.has(subtypeKey)) {
+        entry.botUuids.forEach(uuid => selectedSubtypeUuids.add(uuid))
+      }
+    })
+
+    // Filter bots: include success/pending + error/warning bots that match criteria
+    return filteredBots.filter((bot: FormattedBotData) => {
+      // Always include success and pending bots
+      if (bot.status.type === "pending" || bot.status.type === "success") {
+        return true
+      }
+
+      const errorType = bot.status.value
+      const hasExpandableSubtypes = canExpand(errorType)
+
+      if (hasExpandableSubtypes && selectedErrorValues.includes(errorType)) {
+        // If this error type has expandable subtypes and is selected,
+        // only include if the bot's UUID is in selected subtypes
+        return selectedSubtypeUuids.has(bot.uuid)
+      } else {
+        // If this error type doesn't have expandable subtypes, include all bots of this type
+        return selectedErrorValues.includes(bot.status.value)
+      }
+    })
+  }, [filteredBots, selectedSubtypes, allErrorBots, canExpand, selectedErrorValues])
+
+  // Memoize bots by error type for better performance (use locally filtered bots for interactions)
   const botsByErrorType = useMemo(() => {
-    return filteredBots.reduce(
-      (acc, bot) => {
+    return locallyFilteredBots.reduce(
+      (acc, bot: FormattedBotData) => {
         const errorType = bot.status.value
         if (!acc[errorType]) {
           acc[errorType] = []
@@ -99,12 +162,13 @@ export function ErrorDistributionCard({
       },
       {} as Record<string, FormattedBotData[]>
     )
-  }, [filteredBots])
+  }, [locallyFilteredBots])
 
-  // Get all available subtypes for managing selection state
+  // Get all available subtypes for managing selection state - use unfiltered data
   const allSubtypes = useMemo(() => {
     const subtypes = new Set<string>()
-    const errorDistribution = groupBy(filteredBots.filter(bot => ["error", "warning"].includes(bot.status.type)), "status.value")
+    // Use allErrorBots which includes all error bots for the selected main error types (unfiltered by subtypes)
+    const errorDistribution = groupBy(allErrorBots, "status.value")
     const errorTableData = getErrorTable(errorDistribution)
     const errorTableByType = groupBy(errorTableData, "originalType")
 
@@ -120,25 +184,29 @@ export function ErrorDistributionCard({
     })
 
     return subtypes
-  }, [errorDistributionData, filteredBots])
+  }, [errorDistributionData, allErrorBots])
 
-  // Get expanded error data with subtypes
+  // Get expanded error data with subtypes - use unfiltered data for available options, filtered data for counts
   const expandedErrorData = useMemo((): ExpandedErrorItem[] => {
     const items: ExpandedErrorItem[] = []
 
-    // Get detailed error table data for unfolding
-    const errorDistribution = groupBy(filteredBots.filter(bot => ["error", "warning"].includes(bot.status.type)), "status.value")
-    const errorTableData = getErrorTable(errorDistribution)
+    // Use allErrorBots to get all available subtypes (unfiltered by subtype selection)
+    const allErrorDistribution = groupBy(allErrorBots, "status.value")
+    const allErrorTableData = getErrorTable(allErrorDistribution)
 
     // Group error table data by original type
-    const errorTableByType = groupBy(errorTableData, "originalType")
+    const errorTableByType = groupBy(allErrorTableData, "originalType")
 
     errorDistributionData.forEach((item) => {
-      // Add the main error type
+      // Add the main error type with current filtered counts
+      const currentFilteredCount = locallyFilteredBots.filter((bot: FormattedBotData) =>
+        ["error", "warning"].includes(bot.status.type) && bot.status.value === item.name
+      ).length
+
       items.push({
         name: item.name,
-        value: item.value,
-        percentage: item.percentage
+        value: currentFilteredCount,
+        percentage: currentFilteredCount > 0 ? (currentFilteredCount / locallyFilteredBots.filter((bot: FormattedBotData) => ["error", "warning"].includes(bot.status.type)).length) * 100 : 0
       })
 
       // Check if this error type should be expanded and has subtypes
@@ -148,11 +216,18 @@ export function ErrorDistributionCard({
         // Only show subtypes if there are multiple distinct subtypes
         if (subtypes.length > 1) {
           subtypes.forEach((subtype) => {
-            const subtypePercentage = (subtype.count / item.value) * 100
             const subtypeName = subtype.type === item.name ? subtype.message : subtype.type
+
+            // Calculate current filtered count for this subtype
+            const currentSubtypeCount = locallyFilteredBots.filter((bot: FormattedBotData) =>
+              subtype.botUuids.includes(bot.uuid)
+            ).length
+
+            const subtypePercentage = currentFilteredCount > 0 ? (currentSubtypeCount / currentFilteredCount) * 100 : 0
+
             items.push({
               name: subtypeName,
-              value: subtype.count,
+              value: currentSubtypeCount,
               percentage: subtypePercentage,
               isSubtype: true,
               parentType: item.name,
@@ -164,7 +239,7 @@ export function ErrorDistributionCard({
     })
 
     return items
-  }, [errorDistributionData, expandedErrors, filteredBots])
+  }, [errorDistributionData, expandedErrors, allErrorBots, locallyFilteredBots])
 
   // Debounced hover handler to prevent rapid state updates
   const debouncedSetHoveredBots = useMemo(
@@ -179,7 +254,7 @@ export function ErrorDistributionCard({
 
       if (entry.isSubtype && entry.botUuids) {
         // For subtypes, find bots by UUID
-        botsWithError = filteredBots.filter(bot => entry.botUuids!.includes(bot.uuid))
+        botsWithError = locallyFilteredBots.filter((bot: FormattedBotData) => entry.botUuids!.includes(bot.uuid))
       } else {
         // For main types, get all bots with that error type
         botsWithError = botsByErrorType[entry.name] || []
@@ -189,7 +264,7 @@ export function ErrorDistributionCard({
         debouncedSetHoveredBots(botsWithError)
       }
     },
-    [botsByErrorType, filteredBots, debouncedSetHoveredBots]
+    [botsByErrorType, locallyFilteredBots, debouncedSetHoveredBots]
   )
 
   // Handle cell leave
@@ -204,7 +279,7 @@ export function ErrorDistributionCard({
 
       if (entry.isSubtype && entry.botUuids) {
         // For subtypes, find bots by UUID
-        botsWithError = filteredBots.filter(bot => entry.botUuids!.includes(bot.uuid))
+        botsWithError = locallyFilteredBots.filter((bot: FormattedBotData) => entry.botUuids!.includes(bot.uuid))
       } else {
         // For main types, get all bots with that error type
         botsWithError = botsByErrorType[entry.name] || []
@@ -214,7 +289,7 @@ export function ErrorDistributionCard({
         selectBotsByCategory(botsWithError)
       }
     },
-    [botsByErrorType, filteredBots, selectBotsByCategory]
+    [botsByErrorType, locallyFilteredBots, selectBotsByCategory]
   )
 
   // Cleanup debounced function on unmount
@@ -233,44 +308,144 @@ export function ErrorDistributionCard({
       return
     }
 
-    // Use the global filteredBots for calculating distribution
-    const filteredErrorBots = filteredBots.filter(bot => ["error", "warning"].includes(bot.status.type))
+    // Use the locally filtered bots for calculating distribution
+    const filteredErrorBots = locallyFilteredBots.filter((bot: FormattedBotData) => ["error", "warning"].includes(bot.status.type))
     const distribution = groupBy(filteredErrorBots, "status.value")
 
-    // Create filtered data based on main error type selections
-    const filtered = errorDistributionData
+    // Create chart data that includes expanded subtypes
+    const chartData: ErrorDistribution[] = []
+
+    errorDistributionData
       .filter((item) => selectedErrorValues.includes(item.name))
-      .map((item) => ({
-        ...item,
-        value: distribution[item.name]?.length || 0,
-        percentage: distribution[item.name] ? (distribution[item.name].length / filteredErrorBots.length) * 100 : 0
-      }))
-      .filter((item) => item.value > 0)
+      .forEach((item) => {
+        const currentCount = distribution[item.name]?.length || 0
 
-    setFilteredData(filtered)
-    setFilteredTotal(filtered.reduce((sum, item) => sum + item.value, 0))
-  }, [errorDistributionData, selectedErrorValues, filteredBots])
+        if (currentCount === 0) return
 
-  // Create a color scale based on the number of error types
-  const colorScale = useMemo(() => {
-    return scaleOrdinal()
+        // Check if this error type is expanded and has subtypes
+        if (expandedErrors.has(item.name)) {
+          // Get subtypes for this error type
+          const allErrorDistribution = groupBy(allErrorBots, "status.value")
+          const allErrorTableData = getErrorTable(allErrorDistribution)
+          const subtypes = allErrorTableData.filter(entry => entry.originalType === item.name)
+
+          if (subtypes.length > 1) {
+            // Add individual subtypes to chart data
+            subtypes.forEach((subtype, index) => {
+              const subtypeName = subtype.type === item.name ? subtype.message : subtype.type
+              const currentSubtypeCount = locallyFilteredBots.filter((bot: FormattedBotData) =>
+                subtype.botUuids.includes(bot.uuid)
+              ).length
+
+              if (currentSubtypeCount > 0) {
+                chartData.push({
+                  name: subtypeName,
+                  value: currentSubtypeCount,
+                  percentage: (currentSubtypeCount / filteredErrorBots.length) * 100,
+                  // Add metadata for styling and interactions
+                  isSubtype: true,
+                  parentType: item.name,
+                  subtypeIndex: index,
+                  botUuids: subtype.botUuids
+                } as ErrorDistribution & {
+                  isSubtype?: boolean
+                  parentType?: string
+                  subtypeIndex?: number
+                  botUuids?: string[]
+                })
+              }
+            })
+          } else {
+            // Single subtype, show as main type
+            chartData.push({
+              name: item.name,
+              value: currentCount,
+              percentage: (currentCount / filteredErrorBots.length) * 100
+            })
+          }
+        } else {
+          // Not expanded, show as main type
+          chartData.push({
+            name: item.name,
+            value: currentCount,
+            percentage: (currentCount / filteredErrorBots.length) * 100
+          })
+        }
+      })
+
+    setFilteredData(chartData)
+    setFilteredTotal(chartData.reduce((sum, item) => sum + item.value, 0))
+  }, [errorDistributionData, selectedErrorValues, locallyFilteredBots, expandedErrors, allErrorBots])
+
+  // Create a color scale that handles both main types and subtypes
+  const getColor = useCallback((name: string, isSubtype?: boolean, parentType?: string, subtypeIndex?: number) => {
+    const scale = scaleOrdinal()
       .domain(errorDistributionData.map((d) => d.name))
       .range(schemeTableau10)
+
+    if (isSubtype && parentType) {
+      const baseColor = scale(parentType) as string
+      // Create variations using opacity and hue adjustments
+      const opacity = Math.max(0.6, 1 - (subtypeIndex || 0) * 0.2)
+      return `${baseColor}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`
+    }
+    return scale(name) as string
   }, [errorDistributionData])
 
   // Chart configuration
   const chartConfig = useMemo(() => {
-    return errorDistributionData.reduce(
-      (acc, item) => {
-        acc[item.name] = {
+    return filteredData.reduce(
+      (acc, item: any) => {
+        const colorKey = item.isSubtype ? `${item.parentType}-${item.name}` : item.name
+        acc[colorKey] = {
           label: item.name,
-          color: colorScale(item.name) as string
+          color: getColor(item.name, item.isSubtype, item.parentType, item.subtypeIndex)
         }
         return acc
       },
       {} as Record<string, { label: string; color: string }>
     )
-  }, [errorDistributionData, colorScale])
+  }, [filteredData, getColor])
+
+  // Handle chart cell hover for subtypes
+  const handleChartCellHover = useCallback(
+    (data: any) => {
+      if (data.isSubtype && data.botUuids) {
+        // For subtypes, find bots by UUID
+        const botsWithError = locallyFilteredBots.filter((bot: FormattedBotData) => data.botUuids.includes(bot.uuid))
+        if (botsWithError.length > 0) {
+          debouncedSetHoveredBots(botsWithError)
+        }
+      } else {
+        // For main types, get all bots with that error type
+        const botsWithError = botsByErrorType[data.name] || []
+        if (botsWithError.length > 0) {
+          debouncedSetHoveredBots(botsWithError)
+        }
+      }
+    },
+    [botsByErrorType, locallyFilteredBots, debouncedSetHoveredBots]
+  )
+
+  // Handle chart cell click for subtypes
+  const handleChartCellClick = useCallback(
+    (data: any) => {
+      if (data.isSubtype && data.botUuids) {
+        // For subtypes, find bots by UUID
+        const botsWithError = locallyFilteredBots.filter((bot: FormattedBotData) => data.botUuids.includes(bot.uuid))
+        if (botsWithError.length > 0) {
+          selectBotsByCategory(botsWithError)
+        }
+      } else {
+        // For main types, get all bots with that error type
+        const botsWithError = botsByErrorType[data.name] || []
+        if (botsWithError.length > 0) {
+          selectBotsByCategory(botsWithError)
+        }
+      }
+    },
+    [botsByErrorType, locallyFilteredBots, selectBotsByCategory]
+  )
 
   // Handle legend click
   const handleLegendClick = (errorValue: string) => {
@@ -287,9 +462,17 @@ export function ErrorDistributionCard({
     const subtypeKey = `${parentType}::${subtypeName}`
 
     if (selectedSubtypes.has(subtypeKey)) {
-      removeSubtype(subtypeKey)
+      setSelectedSubtypes(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(subtypeKey)
+        return newSet
+      })
     } else {
-      addSubtype(subtypeKey)
+      setSelectedSubtypes(prev => {
+        const newSet = new Set(prev)
+        newSet.add(subtypeKey)
+        return newSet
+      })
     }
   }
 
@@ -299,8 +482,6 @@ export function ErrorDistributionCard({
       const newSet = new Set(prev)
       if (newSet.has(errorType)) {
         newSet.delete(errorType)
-        // Clear selected subtypes for this error type when collapsing
-        clearSubtypesForError(errorType)
       } else {
         newSet.add(errorType)
       }
@@ -358,13 +539,16 @@ export function ErrorDistributionCard({
                       nameKey="name"
                       strokeWidth={0}
                       animationDuration={800}
-                      onMouseEnter={(data) => handleCellHover(data)}
+                      onMouseEnter={(data) => handleChartCellHover(data)}
                       onMouseLeave={handleCellLeave}
                       className="cursor-pointer"
-                      onClick={(data) => handleCellClick(data)}
+                      onClick={(data) => handleChartCellClick(data)}
                     >
-                      {filteredData.map((entry) => (
-                        <Cell key={entry.name} fill={colorScale(entry.name) as string} />
+                      {filteredData.map((entry: any) => (
+                        <Cell
+                          key={entry.isSubtype ? `${entry.parentType}-${entry.name}` : entry.name}
+                          fill={getColor(entry.name, entry.isSubtype, entry.parentType, entry.subtypeIndex)}
+                        />
                       ))}
                     </Pie>
                     <RechartsTooltip
@@ -498,7 +682,7 @@ export function ErrorDistributionCard({
                             <div
                               className="h-3 w-3 rounded-full"
                               style={{
-                                backgroundColor: colorScale(item.name) as string,
+                                backgroundColor: getColor(item.name) as string,
                                 opacity: selectedErrorValues.includes(item.name) ? 1 : 0.3
                               }}
                             />
@@ -539,7 +723,7 @@ export function ErrorDistributionCard({
                                         onClick={(e) => handleSubtypeClick(item.name, subItem.name, e)}
                                         className="flex h-4 w-4 items-center justify-center rounded border border-border transition-colors hover:border-foreground"
                                         style={{
-                                          backgroundColor: isSelected ? colorScale(item.name) as string : 'transparent'
+                                          backgroundColor: isSelected ? getColor(item.name) as string : 'transparent'
                                         }}
                                       >
                                         {isSelected && <Check className="h-2.5 w-2.5 text-background" />}
@@ -556,7 +740,7 @@ export function ErrorDistributionCard({
                                         <div
                                           className="h-2 w-2 rounded-full opacity-70"
                                           style={{
-                                            backgroundColor: colorScale(item.name) as string
+                                            backgroundColor: getColor(item.name) as string
                                           }}
                                         />
                                         <span className="flex-1 truncate text-left text-muted-foreground">
