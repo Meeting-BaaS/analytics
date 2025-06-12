@@ -1,7 +1,14 @@
 import { useQuery } from "@tanstack/react-query"
 import { fetchBotStats } from "@/lib/api"
 import dayjs from "dayjs"
-import type { FilterState, FormattedBotData } from "@/lib/types"
+import type {
+  ErrorDistribution,
+  ErrorTableEntry,
+  FilterState,
+  FormattedBotData,
+  IssueReportData,
+  PlatformDistribution
+} from "@/lib/types"
 import {
   getErrorDistribution,
   getErrorTable,
@@ -11,6 +18,7 @@ import {
   filterAndGroupErrorBots,
   applyUserReportedErrorStatus
 } from "@/lib/format-bot-stats"
+import type { BotPaginated } from "@/lib/types"
 
 interface UseBotStatsParams {
   offset: number
@@ -20,8 +28,20 @@ interface UseBotStatsParams {
   filters: FilterState
 }
 
+interface BotStatsData {
+  has_more: boolean
+  allBots: FormattedBotData[]
+  errorBots: FormattedBotData[]
+  platformDistribution: PlatformDistribution[]
+  errorDistributionData: ErrorDistribution[]
+  errorTableData: ErrorTableEntry[]
+  issueReportData: IssueReportData
+  totalBots: number
+  dateRange: { firstBotDate: string; lastBotDate: string } | null
+}
+
 export function useBotStats({ offset, limit, startDate, endDate, filters }: UseBotStatsParams) {
-  const { data, isLoading, isError, error, isRefetching, refetch } = useQuery({
+  const { data, isLoading, isRefetching, refetch } = useQuery<BotPaginated, Error, BotStatsData>({
     queryKey: ["bot-stats", { offset, limit, startDate, endDate, filters }],
     queryFn: () => {
       const {
@@ -90,14 +110,13 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
     },
     staleTime: 1000 * 60 * 15, // 15 minutes for analytics data
     refetchOnMount: true,
-    placeholderData: (previousData) => previousData
+    placeholderData: (previousData) => previousData,
+    throwOnError: true
   })
 
   return {
     data,
     isLoading,
-    isError,
-    error,
     isRefetching,
     refetch
   }

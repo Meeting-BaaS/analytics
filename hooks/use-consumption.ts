@@ -36,7 +36,7 @@ export interface ConsumptionData extends RawConsumptionData {
 }
 
 export function useConsumption({ startDate, endDate }: UseConsumptionParams) {
-  const { data, isLoading, isError, error, isRefetching, refetch } = useQuery<
+  const { data, isLoading, isRefetching, refetch } = useQuery<
     RawConsumptionData,
     Error,
     ConsumptionData
@@ -77,13 +77,13 @@ export function useConsumption({ startDate, endDate }: UseConsumptionParams) {
     },
     staleTime: 1000 * 60 * 5,
     refetchOnMount: true,
-    placeholderData: (previousData) => previousData
+    placeholderData: (previousData) => previousData,
+    throwOnError: true
   })
+
   return {
     data,
     isLoading,
-    isError,
-    error,
     isRefetching,
     refetch
   }

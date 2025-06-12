@@ -53,6 +53,8 @@ const additionalLimitOptions = [
 
 export const allLimitOptions = [...baseLimitOptions, ...additionalLimitOptions]
 
+export const DEFAULT_LIMIT = baseLimitOptions[baseLimitOptions.length - 1].value
+
 export function LimitSelector({ value, onChange }: LimitSelectorProps) {
   const session = useSession()
   const isBaasUser = isMeetingBaasUser(session?.user?.email)
@@ -61,9 +63,9 @@ export function LimitSelector({ value, onChange }: LimitSelectorProps) {
   // Reset to default if current limit is not valid for the user
   useEffect(() => {
     if (session?.user?.email && !limitOptions.some((option) => option.value === value)) {
-      onChange(baseLimitOptions[0].value)
+      onChange(DEFAULT_LIMIT)
       try {
-        localStorage.setItem(LIMIT_STORAGE_KEY, baseLimitOptions[0].value.toString())
+        localStorage.setItem(LIMIT_STORAGE_KEY, DEFAULT_LIMIT.toString())
       } catch (error) {
         console.warn("Failed to reset limit in localStorage:", error)
       }

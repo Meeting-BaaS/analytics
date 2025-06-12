@@ -20,7 +20,7 @@ export default function LayoutRoot({ children, session: initialSession }: Layout
   return (
     <>
       <Header user={session.user} />
-      <main className="grow">{children}</main>
+      <main className="flex grow flex-col">{children}</main>
       <Footer />
     </>
   )
