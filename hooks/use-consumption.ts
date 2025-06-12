@@ -36,7 +36,7 @@ export interface ConsumptionData extends RawConsumptionData {
 }
 
 export function useConsumption({ startDate, endDate }: UseConsumptionParams) {
-  const { data, isLoading, isError, error, isRefetching, refetch } = useQuery<
+  const { data, isLoading, isRefetching, refetch } = useQuery<
     RawConsumptionData,
     Error,
     ConsumptionData
@@ -77,15 +77,9 @@ export function useConsumption({ startDate, endDate }: UseConsumptionParams) {
     },
     staleTime: 1000 * 60 * 5,
     refetchOnMount: true,
-    placeholderData: (previousData) => previousData
+    placeholderData: (previousData) => previousData,
+    throwOnError: true
   })
-
-  if (isError) {
-    console.error("Fetching consumption failed", error)
-    // Because this is the main query for the consumption page, we want to throw the error
-    // so that the error boundary can catch it and display a nice error message
-    throw error
-  }
 
   return {
     data,

@@ -21,7 +21,7 @@ interface UseBotStatsParams {
 }
 
 export function useBotStats({ offset, limit, startDate, endDate, filters }: UseBotStatsParams) {
-  const { data, isLoading, isError, error, isRefetching, refetch } = useQuery({
+  const { data, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ["bot-stats", { offset, limit, startDate, endDate, filters }],
     queryFn: () => {
       const {
@@ -90,15 +90,9 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
     },
     staleTime: 1000 * 60 * 15, // 15 minutes for analytics data
     refetchOnMount: true,
-    placeholderData: (previousData) => previousData
+    placeholderData: (previousData) => previousData,
+    throwOnError: true
   })
-
-  if (isError) {
-    console.error("Fetching bot stats failed", error)
-    // Because this is the main query for the analytics page, we want to throw the error
-    // so that the error boundary can catch it and display a nice error message
-    throw error
-  }
 
   return {
     data,

@@ -58,10 +58,7 @@ export const DEFAULT_LIMIT = baseLimitOptions[baseLimitOptions.length - 1].value
 export function LimitSelector({ value, onChange }: LimitSelectorProps) {
   const session = useSession()
   const isBaasUser = isMeetingBaasUser(session?.user?.email)
-  const limitOptions = useMemo(
-    () => (isBaasUser ? allLimitOptions : baseLimitOptions),
-    [isBaasUser]
-  )
+  const limitOptions = isBaasUser ? allLimitOptions : baseLimitOptions
 
   // Reset to default if current limit is not valid for the user
   useEffect(() => {
