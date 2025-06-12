@@ -1,4 +1,6 @@
-export const spotlightVariant = {
+import type { AnimationProps } from "motion/react"
+
+export const spotlightAnimation: AnimationProps["animate"] = {
   x: [0, 3, 2, 4, 8],
   y: [0, -2, 3, 3, 2],
   scale: [1, 1.1, 1, 1.02, 1],

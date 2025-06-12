@@ -3,14 +3,17 @@
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSearchParams } from "next/navigation"
-import { LIMIT_STORAGE_KEY, allLimitOptions } from "@/components/filters/limit-selector"
+import {
+  DEFAULT_LIMIT,
+  LIMIT_STORAGE_KEY,
+  allLimitOptions
+} from "@/components/filters/limit-selector"
 import { updateSearchParams, validateDateRange } from "@/lib/search-params"
 import { validateFilterValues } from "@/lib/search-params"
 import type { FilterState } from "@/lib/types"
 import type { DateValueType } from "react-tailwindcss-datepicker"
 import { useBotStats } from "@/hooks/use-bot-stats"
 import { Loader2 } from "lucide-react"
-import { genericError } from "@/lib/errors"
 import Filters from "@/components/filters"
 import { MainTabs } from "@/components/ui/main-tabs"
 import dynamic from "next/dynamic"
@@ -37,8 +40,6 @@ const Duration = dynamic(() => import("@/components/analytics/duration"), {
 const IssueReports = dynamic(() => import("@/components/analytics/issue-reports"), {
   loading: Loading
 })
-
-export const DEFAULT_LIMIT = allLimitOptions[allLimitOptions.length - 1].value
 
 const tabs = [
   { id: "overview", label: "Overview" },
@@ -85,7 +86,7 @@ export function Analytics() {
     router.replace(`?${params.toString()}`, { scroll: false })
   }, [dateRange, filters, router, searchParams])
 
-  const { data, isLoading, isError, error, isRefetching, refetch } = useBotStats({
+  const { data, isLoading, isRefetching, refetch } = useBotStats({
     offset: 0,
     limit,
     startDate: dateRange?.startDate ?? null,
@@ -128,10 +129,6 @@ export function Analytics() {
       {/* Loading state - only show full screen loader on initial load */}
       {isLoading && !data ? (
         <Loading />
-      ) : isError ? (
-        <div className="flex h-96 items-center justify-center text-destructive">
-          Error: {error instanceof Error ? error.message : genericError}
-        </div>
       ) : (
         <div className="flex flex-col gap-4">
           <div>

@@ -1,7 +1,6 @@
 "use client"
 
 import { useConsumption } from "@/hooks/use-consumption"
-import { genericError } from "@/lib/errors"
 import { RefreshCw } from "lucide-react"
 import { updateDateRangeSearchParams, validateDateRange } from "@/lib/search-params"
 import { Loader2 } from "lucide-react"
@@ -32,7 +31,7 @@ export default function Usage({ paymentStatus }: { paymentStatus?: string }) {
     validateDateRange(searchParams.get("startDate"), searchParams.get("endDate"))
   )
 
-  const { data, isLoading, isError, error, isRefetching, refetch } = useConsumption({
+  const { data, isLoading, isRefetching, refetch } = useConsumption({
     startDate: dateRange?.startDate ?? null,
     endDate: dateRange?.endDate ?? null
   })
@@ -57,10 +56,6 @@ export default function Usage({ paymentStatus }: { paymentStatus?: string }) {
       {isLoading && !data ? (
         <div className="flex h-96 items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : isError ? (
-        <div className="flex h-96 items-center justify-center text-destructive">
-          Error: {error instanceof Error ? error.message : genericError}
         </div>
       ) : !data ? (
         <div className="flex h-96 items-center justify-center">No data found</div>

@@ -15,7 +15,6 @@ import {
 import type { DailyTokenConsumption, UserTokensResponse } from "@/lib/types"
 import { useQuery } from "@tanstack/react-query"
 import dayjs from "dayjs"
-import { useEffect } from "react"
 
 interface UseConsumptionParams {
   startDate: Date | null
@@ -81,20 +80,16 @@ export function useConsumption({ startDate, endDate }: UseConsumptionParams) {
     placeholderData: (previousData) => previousData
   })
 
-  useEffect(() => {
-    if (isError) {
-      console.error("Fetching consumption failed", error)
-      // Because this is the main query for the consumption page, we want to throw the error
-      // so that the error boundary can catch it and display a nice error message
-      throw error
-    }
-  }, [isError, error])
+  if (isError) {
+    console.error("Fetching consumption failed", error)
+    // Because this is the main query for the consumption page, we want to throw the error
+    // so that the error boundary can catch it and display a nice error message
+    throw error
+  }
 
   return {
     data,
     isLoading,
-    isError,
-    error,
     isRefetching,
     refetch
   }

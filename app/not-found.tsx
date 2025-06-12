@@ -1,4 +1,4 @@
-import { spotlightVariant } from "@/lib/animations/background"
+import { spotlightAnimation } from "@/lib/animations/background"
 import { Button } from "@/components/ui/button"
 import * as motion from "motion/react-client"
 import Image from "next/image"
@@ -31,7 +31,7 @@ export default function NotFound() {
             "radial-gradient(circle, rgba(0, 219, 205, 0.3) 10%, rgba(0, 219, 205, 0.2) 80%, transparent 100%)"
         }}
         initial={{ opacity: 0 }}
-        animate={spotlightVariant}
+        animate={spotlightAnimation}
         aria-hidden="true"
       />
     </div>
