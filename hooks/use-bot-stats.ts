@@ -11,6 +11,7 @@ import {
   filterAndGroupErrorBots,
   applyUserReportedErrorStatus
 } from "@/lib/format-bot-stats"
+import { useEffect } from "react"
 
 interface UseBotStatsParams {
   offset: number
@@ -92,6 +93,15 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
     refetchOnMount: true,
     placeholderData: (previousData) => previousData
   })
+
+  useEffect(() => {
+    if (isError) {
+      console.error("Fetching bot stats failed", error)
+      // Because this is the main query for the analytics page, we want to throw the error
+      // so that the error boundary can catch it and display a nice error message
+      throw error
+    }
+  }, [isError, error])
 
   return {
     data,

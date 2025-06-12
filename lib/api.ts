@@ -47,7 +47,7 @@ export async function fetchBotStats(params: FetchLogsParams): Promise<BotPaginat
 
   const response = await fetch(`/api/baas/bots/all?${queryParams.toString()}`)
   if (!response.ok) {
-    throw new Error(`Failed to fetch logs: ${response.status} ${response.statusText}`)
+    throw new Error(`Failed to fetch bot stats: ${response.status} ${response.statusText}`)
   }
   return response.json()
 }

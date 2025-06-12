@@ -38,7 +38,7 @@ const IssueReports = dynamic(() => import("@/components/analytics/issue-reports"
   loading: Loading
 })
 
-export const DEFAULT_LIMIT = allLimitOptions[0].value
+export const DEFAULT_LIMIT = allLimitOptions[allLimitOptions.length - 1].value
 
 const tabs = [
   { id: "overview", label: "Overview" },

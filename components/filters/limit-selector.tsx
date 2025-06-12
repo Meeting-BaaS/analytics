@@ -5,7 +5,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { isMeetingBaasUser } from "@/lib/utils"
 import { useSession } from "@/hooks/use-session"
 
@@ -56,14 +56,18 @@ export const allLimitOptions = [...baseLimitOptions, ...additionalLimitOptions]
 export function LimitSelector({ value, onChange }: LimitSelectorProps) {
   const session = useSession()
   const isBaasUser = isMeetingBaasUser(session?.user?.email)
-  const limitOptions = isBaasUser ? allLimitOptions : baseLimitOptions
+  const limitOptions = useMemo(
+    () => (isBaasUser ? allLimitOptions : baseLimitOptions),
+    [isBaasUser]
+  )
 
   // Reset to default if current limit is not valid for the user
   useEffect(() => {
     if (session?.user?.email && !limitOptions.some((option) => option.value === value)) {
-      onChange(baseLimitOptions[0].value)
+      const defaultLimit = baseLimitOptions[baseLimitOptions.length - 1].value
+      onChange(defaultLimit)
       try {
-        localStorage.setItem(LIMIT_STORAGE_KEY, baseLimitOptions[0].value.toString())
+        localStorage.setItem(LIMIT_STORAGE_KEY, defaultLimit.toString())
       } catch (error) {
         console.warn("Failed to reset limit in localStorage:", error)
       }
