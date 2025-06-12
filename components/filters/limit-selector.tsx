@@ -5,7 +5,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
-import { useEffect, useMemo } from "react"
+import { useEffect } from "react"
 import { isMeetingBaasUser } from "@/lib/utils"
 import { useSession } from "@/hooks/use-session"
 
