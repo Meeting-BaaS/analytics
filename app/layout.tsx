@@ -8,6 +8,8 @@ import type { Metadata, Viewport } from "next"
 import { Sofia_Sans } from "next/font/google"
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
+import { isbot } from "isbot"
+import NotFound from "@/app/not-found"
 
 const sofiaSans = Sofia_Sans({
   subsets: ["latin"],
@@ -17,37 +19,68 @@ const sofiaSans = Sofia_Sans({
 
 export const metadata: Metadata = {
   title: "Bot Analytics | Meeting BaaS",
-  description: "Track meeting bot performance across Zoom, Google Meet, and Microsoft Teams",
-  keywords: ["meeting bot analytics", "bot monitoring", "error tracking", "Meeting BaaS", "Zoom", "Google Meet", "Microsoft Teams"],
-  authors: [{ name: "Meeting BaaS" }],
+  description:
+    "Monitor usage, performance metrics, and duration trends for your meeting bots across platforms.",
+  keywords: [
+    "Meeting BaaS",
+    "meeting bot analytics",
+    "bot monitoring",
+    "error tracking",
+    "platform distribution",
+    "error distribution",
+    "duration trends",
+    "meeting bot performance",
+    "meeting bot usage",
+    "meeting bot duration",
+    "meeting bot error",
+    "meeting bot platform",
+    "meeting bot",
+    "analytics",
+    "Google Meet",
+    "Teams",
+    "Zoom"
+  ],
+  authors: [{ name: "Meeting BaaS Team" }],
   openGraph: {
     type: "website",
     title: "Bot Analytics | Meeting BaaS",
-    description: "Track meeting bot performance across video conferencing platforms",
+    description:
+      "Monitor usage, performance metrics, and duration trends for your meeting bots across platforms.",
     siteName: "Meeting BaaS",
+    url: "https://analytics.meetingbaas.com",
+    locale: "en_US",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Meeting BaaS Analytics"
+        alt: "Meeting BaaS Bot Analytics",
+        type: "image/png"
       }
     ]
   },
   twitter: {
     card: "summary_large_image",
     title: "Bot Analytics | Meeting BaaS",
-    description: "Track meeting bot performance across video conferencing platforms",
-    images: ["/og-image.png"]
+    description:
+      "Monitor usage, performance metrics, and duration trends for your meeting bots across platforms.",
+    images: ["/og-image.png"],
+    creator: "@MeetingBaas",
+    site: "@MeetingBaas"
   },
-  category: "Developer Tools",
+  category: "Video Conferencing Tools",
   applicationName: "Meeting BaaS",
   creator: "Meeting BaaS",
   publisher: "Meeting BaaS",
   referrer: "origin-when-cross-origin",
+  // This is a private app, so we can't index it
   robots: {
-    index: true,
-    follow: true
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false
+    }
   }
 }
 
@@ -67,8 +100,14 @@ export default async function RootLayout({
   // RSCs need to pass cookies to getAuthSession
   const session = await getAuthSession(requestCookies.toString())
   const jwt = requestCookies.get("jwt")?.value || ""
+  const userAgent = requestHeaders.get("user-agent")
 
   if (!session) {
+    // If the request is from a bot, show the not found page (Since this is a private app, we don't want bots to access it)
+    // This is to prevent bots from being redirected to the auth app
+    if (isbot(userAgent)) {
+      return <NotFound />
+    }
     const redirectTo = requestHeaders.get("x-redirect-to")
     const redirectionUrl = redirectTo
       ? `${authAppUrl}/sign-in?redirectTo=${redirectTo}`
