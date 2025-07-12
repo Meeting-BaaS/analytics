@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getAuthAppUrl } from "@/lib/auth/auth-app-url"
+import { isbot } from "isbot"
 
 if (!process.env.AUTH_COOKIE_NAME) {
   throw new Error("AUTH_COOKIE_NAME environment variable is not defined")
@@ -13,6 +14,13 @@ export async function middleware(request: NextRequest) {
   const authCookieName = process.env.AUTH_COOKIE_NAME
   const cookie = authCookieName ? request.cookies.get(authCookieName) : undefined
   const response = NextResponse.next()
+  const userAgent = request.headers.get("user-agent")
+
+  // If the request is from a bot, let it pass through
+  // This is to prevent bots from being redirected to the auth app
+  if (isbot(userAgent)) {
+    return NextResponse.next()
+  }
 
   const signInUrl = `${authAppUrl}/sign-in`
   const appUrl = request.nextUrl.origin
