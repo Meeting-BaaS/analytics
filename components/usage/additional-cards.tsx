@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatFloat } from "@/lib/utils"
-import type { ConsumptionData } from "@/hooks/use-consumption"
 import { Separator } from "@/components/ui/separator"
+import type { ConsumptionData } from "@/hooks/use-consumption"
+import { formatFloat } from "@/lib/utils"
 
 interface AdditionalCardsProps {
   data: ConsumptionData
@@ -56,7 +56,7 @@ export function AdditionalCards({ data, dateRangeFormatted }: AdditionalCardsPro
           <div className="font-bold text-4xl">
             {formatFloat(
               chartData?.length > 0
-                ? chartData.reduce((sum, day) => sum + (day.duration || 0), 0) / 3600
+                ? chartData.reduce((sum, day) => sum + (day.duration || 0), 0)
                 : 0
             )}
           </div>
